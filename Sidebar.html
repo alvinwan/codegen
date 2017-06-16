@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+    <!-- The CSS package above applies Google styling to buttons and other elements. -->
+
+    <style>
+    .branding-below {
+      bottom: 54px;
+      top: 0;
+    }
+
+    .branding-text {
+      left: 7px;
+      position: relative;
+      top: 3px;
+    }
+
+    .logo {
+      vertical-align: middle;
+    }
+
+    .width-100 {
+      width: 100%;
+      box-sizing: border-box;
+      -webkit-box-sizing : border-box;‌
+      -moz-box-sizing : border-box;
+    }
+
+    label {
+      font-weight: bold;
+    }
+
+    label span {
+      font-weight: normal;
+    }
+
+    #code-options,
+    #quiz-options,
+    #respondent-options {
+      background-color: #eee;
+      border-color: #eee;
+      border-width: 5px;
+      border-style: solid;
+      display: none;
+    }
+
+    #respondent-options,
+    #code-options {
+      display:block;
+    }
+
+    #code-salt,
+    #respondent-email,
+    #button-bar,
+    #submit-subject {
+      margin-bottom: 10px;
+    }
+
+    #required-score {
+      display: inline;
+    }
+
+    </style>
+  </head>
+  <body>
+    <div class="sidebar branding-below">
+      <form>
+        <div class="block form-group" id="code-options">
+          <label for="code-salt">
+            Salt <span>(unique key that helps you identify responses from this form)</span>
+          </label>
+          <input type="text" class="width-100" id="code-salt">
+        </div>
+
+        <div class="block form-group" id="respondent-options">
+          <label for="respondent-email">
+            Which question asks for their email?
+          </label>
+          <select class="width-100" id="respondent-email"></select>
+          <label for="submit-subject">
+            Notification email subject:
+          </label>
+          <input type="text" class="width-100" id="submit-subject">
+          <label for="submit-notice">Notification email body:</label>
+          <textarea rows="8" cols="40" id="submit-notice"
+              class="width-100"></textarea>
+        </div>
+
+        <div class="block">
+          <input type="checkbox" id="quiz-score">
+          <label for="quiz-score">Require minimum score <span>(automatically converts form to quiz)</span></label>
+        </div>
+        <div class="block form-group" id="quiz-options">
+          <label for="required-score">Passing Score</label>
+          <input type="number" id="required-score" value="90"
+              min="0" max="100"> Required percent score (default 90)
+        </div>
+
+        <div class="block" id="button-bar">
+          <button class="action" id="save-settings">Save</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="sidebar bottom">
+      <span class="gray branding-text">Form Code Generator by <a href="http://alvinwan.com">Alvin Wan</a></span>
+    </div>
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js">
+    </script>
+    <script>
+      /**
+       * On document load, assign required handlers to each element,
+       * and attempt to load any saved settings.
+       */
+      $(function() {
+        $('#save-settings').click(saveSettingsToServer);
+        $('#quiz-score').click(toggleQuizScore);
+        $('#required-score').change(validateNumber);
+        google.script.run
+           .withSuccessHandler(loadSettings)
+           .withFailureHandler(showStatus)
+           .withUserObject($('#button-bar').get())
+           .getSettings();
+      });
+
+      /**
+       * Callback function that populates the notification options using
+       * previously saved values.
+       *
+       * @param {Object} settings The saved settings from the client.
+       */
+      function loadSettings(settings) {
+        $('#code-salt').val(settings.codeSalt);
+        $('#required-score').val(!settings.requiredScore ?
+           90 : settings.requiredScore);
+        $('#submit-subject').val(!settings.responseSubject ?
+           'Thank you for filling out our form!' :
+           settings.responseSubject);
+        $('#submit-notice').val(!settings.responseText ?
+           'Thank you for responding to our form!' :
+           settings.responseText);
+
+        if (settings.quizScore === 'true') {
+          $('#quiz-score').prop('checked', true);
+          $('#quiz-options').show();
+        }
+
+        // Fill the respondent email select box with the
+        // titles given to the form's text Items. Also include
+        // the form Item IDs as values so that they can be
+        // easily recovered during the Save operation.
+        for (var i = 0; i < settings.textItems.length; i++) {
+          var option = $('<option>').attr('value', settings.textItems[i]['id'])
+              .text(settings.textItems[i]['title']);
+          $('#respondent-email').append(option);
+        }
+        $('#respondent-email').val(settings.respondentEmailItemId);
+      }
+
+      /**
+       * Toggles the visibility of the quiz options.
+       */
+      function toggleQuizScore() {
+        $('#status').remove();
+        if($('#quiz-score').is(':checked')) {
+          maybeConvertToQuiz();
+          $('#quiz-options').show();
+        } else {
+          $('#quiz-options').hide();
+        }
+      }
+
+      /**
+       * Attempt converting form to quiz.
+       */
+      function maybeConvertToQuiz() {
+        google.script.run
+            .withSuccessHandler(
+              function(msg, element) {
+                showStatus(msg, $('#button-bar'));
+                element.disabled = false;
+              })
+            .withFailureHandler(
+              function(msg, element) {
+                showStatus(msg, $('#button-bar'));
+                element.disabled = false;
+              })
+            .withUserObject(this)
+            .convertToQuiz();
+      }
+
+      /**
+       * Ensures that the entered step is a number between 0
+       * and 100, inclusive.
+       */
+      function validateNumber() {
+        var value = $('#required-score').val();
+        if (!value) {
+          $('#required-score').val(90);
+        } else if (value < 0) {
+          $('#required-score').val(0);
+        } else if (value > 100) {
+          $('#required-score').val(100);
+        }
+      }
+
+      /**
+       * Collects the options specified in the add-on sidebar and sends them to
+       * be saved as Properties on the server.
+       */
+      function saveSettingsToServer() {
+        this.disabled = true;
+        $('#status').remove();
+        var quizScore = $('#quiz-score').is(':checked');
+        var settings = {
+          'quizScore': quizScore
+        };
+
+        settings.codeSalt = $('#code-salt').val().trim();
+
+        // Abort save if entered salt is blank
+        if (!settings.codeSalt) {
+          showStatus('Enter a code salt', $('#button-bar'));
+          this.disabled = false;
+          return;
+        }
+
+        // Only save quiz options if quiz score is turned on.
+        if (quizScore) {
+          settings.requiredScore = $('#required-score').val();
+        }
+
+        settings.respondentEmailItemId = $('#respondent-email').val();
+        settings.responseSubject = $('#submit-subject').val();
+        settings.responseText = $('#submit-notice').val();
+
+        // Save the settings on the server
+        google.script.run
+            .withSuccessHandler(
+              function(msg, element) {
+                showStatus('Saved settings', $('#button-bar'));
+                element.disabled = false;
+              })
+            .withFailureHandler(
+              function(msg, element) {
+                showStatus(msg, $('#button-bar'));
+                element.disabled = false;
+              })
+            .withUserObject(this)
+            .saveSettings(settings);
+      }
+
+      /**
+       * Inserts a div that contains an status message after a given element.
+       *
+       * @param {String} msg The status message to display.
+       * @param {Object} element The element after which to display the Status.
+       */
+      function showStatus(msg, element) {
+         var div = $('<div>')
+             .attr('id', 'status')
+             .attr('class','error')
+             .text(msg);
+        $(element).after(div);
+      }
+    </script>
+  </body>
+</html>
