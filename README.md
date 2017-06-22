@@ -3,6 +3,8 @@
 # Code Generator
 Google Forms add-on that generates codes upon form submission. Optionally, require a passing quiz score (if you've set it up as a quiz) and/or set a custom salt. This add-on was borne of my need to establish a quiz as a *pre-requisite* to filling out a second form.
 
+Now available through the [Google Forms Web Store](https://chrome.google.com/webstore/detail/form-code-generator/dobboooonnlomcgidfnpmeipdcdennnh)
+
 > Form Code Generator was created for lightweight use cases only. It should not be used for complex or important workflows, as the security of these hash codes are not generated per state-of-the-art standards (e.g., does not support nonce values).
 
 Disclaimer: I used plenty of code from Google Form Add-on's [original tutorial](https://developers.google.com/apps-script/quickstart/forms-add-on). In several cases, I even left Google's original copyright notice.
