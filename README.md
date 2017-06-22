@@ -10,3 +10,5 @@ Now available through the [Google Forms Web Store](https://chrome.google.com/web
 Disclaimer: I used plenty of code from Google Form Add-on's [original tutorial](https://developers.google.com/apps-script/quickstart/forms-add-on). In several cases, I even left Google's original copyright notice.
 
 ![screen shot 2017-06-16 at 4 59 00 am](https://user-images.githubusercontent.com/2068077/27226486-27bb1f64-5254-11e7-88cc-72a307145535.png)
+
+![screen shot 2017-06-22 at 2 59 10 pm](https://user-images.githubusercontent.com/2068077/27457941-6941911e-575b-11e7-9ce0-b7ccae058229.png)
