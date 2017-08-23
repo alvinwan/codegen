@@ -117,6 +117,10 @@ function getSettings() {
     settings.codeSalt = Session.getEffectiveUser().getEmail();
   }
 
+  if (!settings.emailMeAddress) {
+    settings.emailMeAddress = Session.getEffectiveUser().getEmail();
+  }
+
   // Get text field items in the form and compile a list
   //   of their titles and IDs.
   var form = FormApp.getActiveForm();
@@ -190,17 +194,21 @@ function respondToFormSubmit(e) {
 
     var code = '';
     var message = '';
+    var passed = false;
+    var respondentEmail = getRespondentEmail(e.response);
 
     // Generate a code if need be, and notify the respondent.
     if (settings.getProperty('quizScore') != 'true') {
       code = generateCode(e.response);
-      message = 'Thank you for submitting! Here is your code.';
+      message = 'Thank you for submitting! (Tester: ' + respondentEmail + ') Here is your code.';
+      passed = true;
     } else {
       var percentage = evaluatePercentage(e.response);
       var requiredPercentage = parseFloat(settings.getProperty('requiredScore'));
       if (percentage >= requiredPercentage) {
         code = generateCode(e.response);
-        message = 'Congratulations! You received ' + percentage + '% and needed ' + requiredPercentage + '%. Here is your code.';
+        message = 'Congratulations! (Tester: ' + respondentEmail + ') You received ' + percentage + '% and needed ' + requiredPercentage + '%. Here is your code.';
+        passed = true;
       } else {
         message = 'Ack. :( You received ' + percentage + '% but needed ' + requiredPercentage + '% . Please try again.';
       }
@@ -209,7 +217,17 @@ function respondToFormSubmit(e) {
     // Check if the form respondent needs to be notified; if so, construct and
     // send the notification. Be sure to respect the remaining email quota.
     if (MailApp.getRemainingDailyQuota() > 0) {
-      sendRespondentNotification(e.response, code, message);
+      sendNotification(respondentEmail, code, message);
+    }
+
+    // Check if the form creator needs to be notified.
+    if (MailApp.getRemainingDailyQuota() > 0 && settings.getProperty('emailMe') === 'true' && passed) {
+      var emailAddress = settings.getProperty('emailMeAddress');
+      if (!emailAddress) {
+        emailAddress = Session.getActiveUser().getEmail();
+      }
+      Logger.log('Sending email to' + emailAddress);
+      sendNotification(emailAddress, code, message);
     }
   }
 }
@@ -271,6 +289,9 @@ function evaluatePercentage(response) {
                itemResponse.getResponse(),
                responseScore,
                itemMaximumScore);
+  }
+  if (maximumScore == 0) {
+    return 0;
   }
   return totalScore / maximumScore * 100;
 }
@@ -371,18 +392,16 @@ function getRespondentEmail(response) {
 }
 
 /**
- * Sends out respondent notification emails.
+ * Sends email to the provided email.
  *
- * @param {FormResponse} response FormResponse object of the event
- *      that triggered this notification
+ * @param {string} emailAddress The destination
  * @param {string} code Newly generated to send
  * @param {string} message Message placing the code in context
  */
-function sendRespondentNotification(response, code, message) {
+function sendNotification(emailAddress, code, message) {
   var form = FormApp.getActiveForm();
   var settings = PropertiesService.getDocumentProperties();
-  var respondentEmail = getRespondentEmail(response);
-  if (respondentEmail) {
+  if (emailAddress) {
     var template =
         HtmlService.createTemplateFromFile('RespondentNotification');
     template.paragraphs = settings.getProperty('responseText').split('\n');
@@ -390,7 +409,7 @@ function sendRespondentNotification(response, code, message) {
     template.message = message;
     template.code = code;
     var message = template.evaluate();
-    MailApp.sendEmail(respondentEmail,
+    MailApp.sendEmail(emailAddress,
         settings.getProperty('responseSubject'),
         message.getContent(), {
           name: form.getTitle(),

@@ -38,7 +38,8 @@
 
     #code-options,
     #quiz-options,
-    #respondent-options {
+    #respondent-options,
+    #email-options {
       background-color: #eee;
       border-color: #eee;
       border-width: 5px;
@@ -72,6 +73,15 @@
             Salt <span>(unique key that helps you identify responses from this form)</span>
           </label>
           <input type="text" class="width-100" id="code-salt">
+        </div>
+
+        <div class="block">
+          <input type="checkbox" id="email-me">
+          <label for="email-me"><span>Select if you'd like codes to be emailed to you, too.</span></label>
+        </div>
+        <div class="block form-group" id="email-options">
+          <label for="email-address">Email Address <span>(that receives copy of successful submission results)</span></label>
+          <input class="width-100" type="email" id="email-address">
         </div>
 
         <div class="block form-group" id="respondent-options">
@@ -118,6 +128,7 @@
       $(function() {
         $('#save-settings').click(saveSettingsToServer);
         $('#quiz-score').click(toggleQuizScore);
+        $('#email-me').click(toggleEmailMe);
         $('#required-score').change(validateNumber);
         google.script.run
            .withSuccessHandler(loadSettings)
@@ -148,6 +159,12 @@
           $('#quiz-options').show();
         }
 
+        if (settings.emailMe === 'true') {
+          $('#email-me').prop('checked', true);
+          $('#email-options').show();
+          $('#email-address').val(settings.emailMeAddress);
+        }
+
         // Fill the respondent email select box with the
         // titles given to the form's text Items. Also include
         // the form Item IDs as values so that they can be
@@ -158,6 +175,17 @@
           $('#respondent-email').append(option);
         }
         $('#respondent-email').val(settings.respondentEmailItemId);
+      }
+
+      /**
+       * Toggles the visibility of email me options.
+       */
+      function toggleEmailMe() {
+        if($('#email-me').is(':checked')) {
+          $('#email-options').show();
+        } else {
+          $('#email-options').hide();
+        }
       }
 
       /**
@@ -215,8 +243,10 @@
         this.disabled = true;
         $('#status').remove();
         var quizScore = $('#quiz-score').is(':checked');
+        var emailMe = $('#email-me').is(':checked');
         var settings = {
-          'quizScore': quizScore
+          'quizScore': quizScore,
+          'emailMe': emailMe
         };
 
         settings.codeSalt = $('#code-salt').val().trim();
@@ -231,6 +261,11 @@
         // Only save quiz options if quiz score is turned on.
         if (quizScore) {
           settings.requiredScore = $('#required-score').val();
+        }
+
+        // Only save email options if email me is turned on.
+        if (emailMe) {
+          settings.emailMeAddress = $('#email-address').val();
         }
 
         settings.respondentEmailItemId = $('#respondent-email').val();
