@@ -7,7 +7,7 @@ Google Forms add-on that generates codes upon form submission. This add-on was b
 - Set a custom salt.
 - Optionally, email the code to yourself as well. (only if the student passes the quiz, or if no passing score is required)
 
-Now available through the [Google Forms Web Store](https://chrome.google.com/webstore/detail/form-code-generator/dobboooonnlomcgidfnpmeipdcdennnh). Need to verify these codes? See the section `#Verification` below. A Google Spreads add-on is coming soon.
+Now available through the [GSuite Marketplace](https://gsuite.google.com/marketplace/app/form_code_generator/796344568436). Need to verify these codes? See the section `#Verification` below. A Google Spreads add-on is coming soon.
 
 > Form Code Generator was created for lightweight use cases only. It should not be used for complex or important workflows, as the security of these hash codes are not generated per state-of-the-art standards (e.g., does not support nonce values).
 
@@ -49,3 +49,7 @@ function MD5 (input) {
 ```
 
 Make sure to replace `YOUR_SALT`.
+
+## Privacy Policy
+
+We do not store or share your information, period. This can verified in the open-source code provided in this repository. Google Apps Scripts provide logs for failed executions, but these logs do not contain user information.
