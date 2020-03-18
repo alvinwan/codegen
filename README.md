@@ -21,8 +21,10 @@ Disclaimer: I used plenty of code from Google Form Add-on's [original tutorial](
 
 In effect, I use an `MD5` hash combining the user's email address, a salt the user sets, and a fixed random string to prevent rainbow tables.
 
+> If the Form Code Generator auth is not working, but you still want to generate codes, just skip step 1 below. 
+
 1. Check the salt used in your form code generator. (Go to “Form Code Generator” > “Configurations”. In the side menu, the first form input is your salt.)
-2. In the relevant Google spread, click on “Tools” > “Script Editor”, and paste the following code below. Save the script. (`ctrl+s` or `cmd+s`)
+2. In the relevant Google spread containing form responses, click on “Tools” > “Script Editor”, and paste the following code below. Save the script. (`ctrl+s` or `cmd+s`)
 
 ````
 function MD5 (input) {
@@ -42,13 +44,13 @@ function MD5 (input) {
 }
 ````
 
-3. In the relevant Google spread, add the following to F2 to see the hash code for row 2’s submission:
+3. In the relevant Google spread, identify which column contains the respondent's email address. Say this is column `C`. Then, add the following code to any cell, to generate the code for the response in row 2:
 
 ```
 =MD5(C2+YOUR_SALT + "dEstr0yR@1nB0wTAb1es”)
 ```
 
-Make sure to replace `YOUR_SALT`. See the [example spread](https://docs.google.com/spreadsheets/d/1-70oFCHEGJjd0QFkSKCjqgsNVnaQxOkHFWwZyh5gAjo/edit?usp=sharing) for sample usage.
+Make sure to replace `YOUR_SALT`. See the [example spread](https://docs.google.com/spreadsheets/d/1-70oFCHEGJjd0QFkSKCjqgsNVnaQxOkHFWwZyh5gAjo/edit?usp=sharing) for sample usage; the script for this spread, reproduced in the code block above, can be found [here](https://script.google.com/d/1q_7z_1GO69wvIuq4YKeF46qTP3sFZS_r1TeaonAW0jM89Uq3WeAqykB9/edit?usp=sharing).
 
 ## Privacy Policy
 
