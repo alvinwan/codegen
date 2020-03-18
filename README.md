@@ -48,7 +48,7 @@ function MD5 (input) {
 =MD5(C2+YOUR_SALT + "dEstr0yR@1nB0wTAb1es”)
 ```
 
-Make sure to replace `YOUR_SALT`.
+Make sure to replace `YOUR_SALT`. See the [example spread](https://docs.google.com/spreadsheets/d/1-70oFCHEGJjd0QFkSKCjqgsNVnaQxOkHFWwZyh5gAjo/edit?usp=sharing) for sample usage.
 
 ## Privacy Policy
 
