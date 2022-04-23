@@ -93,7 +93,7 @@ function saveSettings(settings) {
 
 function convertToQuiz() {
   var form = FormApp.getActiveForm();
-
+  
   if (form.isQuiz()) {
     return 'Nice! Already a quiz.';
   } else {
@@ -116,7 +116,7 @@ function getSettings() {
   if (!settings.codeSalt) {
     settings.codeSalt = Session.getEffectiveUser().getEmail();
   }
-
+  
   if (!settings.emailMeAddress) {
     settings.emailMeAddress = Session.getEffectiveUser().getEmail();
   }
@@ -141,8 +141,6 @@ function getSettings() {
 function adjustFormSubmitTrigger() {
   var form = FormApp.getActiveForm();
   var triggers = ScriptApp.getUserTriggers(form);
-  var settings = PropertiesService.getDocumentProperties();
-  var triggerNeeded = true;
 
   // Create a new trigger if required; delete existing trigger
   //   if it is not needed.
@@ -153,14 +151,17 @@ function adjustFormSubmitTrigger() {
       break;
     }
   }
-  if (triggerNeeded && !existingTrigger) {
-    var trigger = ScriptApp.newTrigger('respondToFormSubmit')
-        .forForm(form)
-        .onFormSubmit()
-        .create();
-  } else if (!triggerNeeded && existingTrigger) {
+  
+  if (existingTrigger) {
+    console.log("Removing old trigger")
     ScriptApp.deleteTrigger(existingTrigger);
   }
+
+  console.log("Adding new trigger");
+  var trigger = ScriptApp.newTrigger('respondToFormSubmit')
+      .forForm(form)
+      .onFormSubmit()
+      .create();
 }
 
 /**
@@ -191,12 +192,12 @@ function respondToFormSubmit(e) {
   } else {
     // All required authorizations have been granted, so continue to respond to
     // the trigger event.
-
+    
     var code = '';
     var message = '';
     var passed = false;
     var respondentEmail = getRespondentEmail(e.response);
-
+    
     // Generate a code if need be, and notify the respondent.
     if (settings.getProperty('quizScore') != 'true') {
       code = generateCode(e.response);
@@ -219,7 +220,7 @@ function respondToFormSubmit(e) {
     if (MailApp.getRemainingDailyQuota() > 0) {
       sendNotification(respondentEmail, code, message);
     }
-
+    
     // Check if the form creator needs to be notified.
     if (MailApp.getRemainingDailyQuota() > 0 && settings.getProperty('emailMe') === 'true' && passed) {
       var emailAddress = settings.getProperty('emailMeAddress');
@@ -390,7 +391,7 @@ function getRespondentEmail(response) {
       .getResponse();
   return respondentEmail;
 }
-
+      
 /**
  * Sends email to the provided email.
  *
