@@ -10,32 +10,32 @@
       bottom: 54px;
       top: 0;
     }
-
+    
     .branding-text {
       left: 7px;
       position: relative;
       top: 3px;
     }
-
+    
     .logo {
       vertical-align: middle;
     }
-
+    
     .width-100 {
       width: 100%;
       box-sizing: border-box;
       -webkit-box-sizing : border-box;‌
       -moz-box-sizing : border-box;
     }
-
+    
     label {
       font-weight: bold;
     }
-
+    
     label span {
       font-weight: normal;
     }
-
+    
     #code-options,
     #quiz-options,
     #respondent-options,
@@ -46,23 +46,24 @@
       border-style: solid;
       display: none;
     }
-
+    
     #respondent-options,
     #code-options {
       display:block;
     }
-
+    
     #code-salt,
+    #code-length,
     #respondent-email,
     #button-bar,
     #submit-subject {
       margin-bottom: 10px;
     }
-
+    
     #required-score {
       display: inline;
     }
-
+    
     </style>
   </head>
   <body>
@@ -70,11 +71,16 @@
       <form>
         <div class="block form-group" id="code-options">
           <label for="code-salt">
-            Salt <span>(unique key that helps you identify responses from this form)</span>
+            Salt <span>unique key that helps you identify responses from this form</span>
           </label>
           <input type="text" class="width-100" id="code-salt">
+          <label for="code-length">
+            Code Length <span>length of the generated verification codes</span>
+          </label>
+          <input type="number" min="1" max="32" 
+              class="width-100" id="code-length">
         </div>
-
+        
         <div class="block">
           <input type="checkbox" id="email-me">
           <label for="email-me"><span>Select if you'd like codes to be emailed to you, too.</span></label>
@@ -83,7 +89,7 @@
           <label for="email-address">Email Address <span>(that receives copy of successful submission results)</span></label>
           <input class="width-100" type="email" id="email-address">
         </div>
-
+   
         <div class="block form-group" id="respondent-options">
           <label for="respondent-email">
             Which question asks for their email?
@@ -97,27 +103,28 @@
           <textarea rows="8" cols="40" id="submit-notice"
               class="width-100"></textarea>
         </div>
-
+        
         <div class="block">
           <input type="checkbox" id="quiz-score">
           <label for="quiz-score">Require minimum score <span>(automatically converts form to quiz)</span></label>
         </div>
         <div class="block form-group" id="quiz-options">
           <label for="required-score">Passing Score</label>
+          Required percent score (default 90)
           <input type="number" id="required-score" value="90"
-              min="0" max="100"> Required percent score (default 90)
+              min="0" max="100" class="width-100" >
         </div>
-
+        
         <div class="block" id="button-bar">
           <button class="action" id="save-settings">Save</button>
         </div>
       </form>
     </div>
-
+    
     <div class="sidebar bottom">
       <span class="gray branding-text">Form Code Generator by <a href="http://alvinwan.com">Alvin Wan</a></span>
     </div>
-
+    
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js">
     </script>
     <script>
@@ -136,7 +143,7 @@
            .withUserObject($('#button-bar').get())
            .getSettings();
       });
-
+    
       /**
        * Callback function that populates the notification options using
        * previously saved values.
@@ -145,6 +152,7 @@
        */
       function loadSettings(settings) {
         $('#code-salt').val(settings.codeSalt);
+        $('#code-length').val(settings.codeLength);
         $('#required-score').val(!settings.requiredScore ?
            90 : settings.requiredScore);
         $('#submit-subject').val(!settings.responseSubject ?
@@ -153,18 +161,18 @@
         $('#submit-notice').val(!settings.responseText ?
            'Thank you for responding to our form!' :
            settings.responseText);
-
+           
         if (settings.quizScore === 'true') {
           $('#quiz-score').prop('checked', true);
           $('#quiz-options').show();
         }
-
+        
         if (settings.emailMe === 'true') {
           $('#email-me').prop('checked', true);
           $('#email-options').show();
           $('#email-address').val(settings.emailMeAddress);
         }
-
+    
         // Fill the respondent email select box with the
         // titles given to the form's text Items. Also include
         // the form Item IDs as values so that they can be
@@ -176,7 +184,7 @@
         }
         $('#respondent-email').val(settings.respondentEmailItemId);
       }
-
+      
       /**
        * Toggles the visibility of email me options.
        */
@@ -187,7 +195,7 @@
           $('#email-options').hide();
         }
       }
-
+      
       /**
        * Toggles the visibility of the quiz options.
        */
@@ -200,7 +208,7 @@
           $('#quiz-options').hide();
         }
       }
-
+      
       /**
        * Attempt converting form to quiz.
        */
@@ -219,7 +227,7 @@
             .withUserObject(this)
             .convertToQuiz();
       }
-
+    
       /**
        * Ensures that the entered step is a number between 0
        * and 100, inclusive.
@@ -234,7 +242,7 @@
           $('#required-score').val(100);
         }
       }
-
+    
       /**
        * Collects the options specified in the add-on sidebar and sends them to
        * be saved as Properties on the server.
@@ -248,9 +256,10 @@
           'quizScore': quizScore,
           'emailMe': emailMe
         };
-
+        
         settings.codeSalt = $('#code-salt').val().trim();
-
+        settings.codeLength = $('#code-length').val().trim();
+    
         // Abort save if entered salt is blank
         if (!settings.codeSalt) {
           showStatus('Enter a code salt', $('#button-bar'));
@@ -258,20 +267,31 @@
           return;
         }
 
+        // Abort save if entered code length is blank
+        let length = parseInt(settings.codeLength);
+        if (!length || !Number.isInteger(length) || length < 1 || length > 32) {
+          if (!length)                    message = 'Enter a code length';
+          if (!Number.isInteger(length))  message = 'Enter a valid number.';
+          if (length < 1 || length > 32)  message = 'Number must be between 1 and 32';
+          showStatus(message, $('#button-bar'));
+          this.disabled = false;
+          return;
+        }
+    
         // Only save quiz options if quiz score is turned on.
         if (quizScore) {
           settings.requiredScore = $('#required-score').val();
         }
-
+        
         // Only save email options if email me is turned on.
         if (emailMe) {
           settings.emailMeAddress = $('#email-address').val();
         }
-
+       
         settings.respondentEmailItemId = $('#respondent-email').val();
         settings.responseSubject = $('#submit-subject').val();
         settings.responseText = $('#submit-notice').val();
-
+    
         // Save the settings on the server
         google.script.run
             .withSuccessHandler(
@@ -287,7 +307,7 @@
             .withUserObject(this)
             .saveSettings(settings);
       }
-
+    
       /**
        * Inserts a div that contains an status message after a given element.
        *

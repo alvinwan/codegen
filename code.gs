@@ -116,6 +116,11 @@ function getSettings() {
   if (!settings.codeSalt) {
     settings.codeSalt = Session.getEffectiveUser().getEmail();
   }
+
+  // Use a default code legnth if length hasn't been provided yet.
+  if (!settings.codeLength) {
+    settings.codeLength = 32;
+  }
   
   if (!settings.emailMeAddress) {
     settings.emailMeAddress = Session.getEffectiveUser().getEmail();
@@ -243,7 +248,8 @@ function generateCode(response) {
   var settings = PropertiesService.getDocumentProperties();
   var respondentEmail = getRespondentEmail(response);
   var salt = settings.getProperty('codeSalt');
-  return MD5(respondentEmail + salt + 'dEstr0yR@1nB0wTAb1es');
+  var length = settings.getProperty('codeLength');
+  return MD5(respondentEmail + salt + 'dEstr0yR@1nB0wTAb1es', length);
 }
 
 /**
@@ -251,8 +257,9 @@ function generateCode(response) {
  * https://stackoverflow.com/a/11868113/4855984
  *
  * @param {string} input The text to hash using md5
+ * @param {number} length Length of the outputted hash. Max 32.
  */
-function MD5 (input) {
+function MD5 (input="test", length=16) {
   var rawHash = Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, input);
   var txtHash = '';
   for (i = 0; i < rawHash.length; i++) {
@@ -265,6 +272,7 @@ function MD5 (input) {
     }
     txtHash += hashVal.toString(16);
   }
+  txtHash = txtHash.slice(0, length);
   return txtHash;
 }
 
